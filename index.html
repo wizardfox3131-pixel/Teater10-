@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>漂流站 · 实时论坛</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { --ink:#1e2520; --muted:#798079; --line:#e7e8e1; --paper:#fbfbf7; --lime:#dff461; --forest:#174636; --coral:#ff8468; --gold:#ffc857; --blue:#e4f0ff; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--paper); font-family:"Noto Sans SC",sans-serif; min-height:100vh; }
+    button,input,textarea { font:inherit; }
+    button { cursor:pointer; border:0; }
+    .topbar { height:72px; padding:0 max(24px,calc((100vw - 1280px)/2)); display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); background:rgba(251,251,247,.92); backdrop-filter:blur(12px); position:sticky; top:0; z-index:5; }
+    .brand { display:flex; align-items:center; gap:11px; font-weight:800; letter-spacing:-.05em; font-size:20px; }
+    .brand-mark { display:grid; place-items:center; width:31px; height:31px; border-radius:50% 50% 48% 48%; background:var(--lime); color:var(--forest); font-family:"DM Mono"; font-weight:500; transform:rotate(-10deg); }
+    .nav { display:flex; gap:6px; margin-right:auto; margin-left:54px; }
+    .nav a { text-decoration:none; padding:8px 13px; color:var(--muted); font-size:14px; font-weight:600; border-radius:8px; }
+    .nav a.active { color:var(--ink); background:#eff0e9; }
+    .status { display:flex; align-items:center; gap:8px; font:500 12px "DM Mono",monospace; color:#46705d; }
+    .live-dot { width:8px; height:8px; border-radius:50%; background:#54d287; box-shadow:0 0 0 4px #e4f8ea; animation:pulse 2s infinite; }
+    @keyframes pulse { 50% { box-shadow:0 0 0 7px transparent; } }
+    .page { max-width:1280px; margin:auto; padding:38px 24px 70px; display:grid; grid-template-columns:220px minmax(0,1fr) 270px; gap:32px; }
+    .sidebar { position:sticky; top:105px; align-self:start; }
+    .sidebar h3,.side-title { font-size:12px; letter-spacing:.08em; color:#899089; margin:0 0 12px; }
+    .channels { list-style:none; margin:0; padding:0; display:grid; gap:3px; }
+    .channels button { width:100%; display:flex; align-items:center; justify-content:space-between; padding:9px 11px; background:transparent; color:#5d655f; border-radius:8px; text-align:left; font-size:14px; }
+    .channels button:hover,.channels button.selected { background:#edf0e6; color:var(--ink); font-weight:700; }
+    .channel-count { color:#9ba19c; font:12px "DM Mono"; }
+    .sidebar-rule { border:0; border-top:1px solid var(--line); margin:26px 0; }
+    .mini-members { display:grid; gap:10px; }
+    .member { display:flex; align-items:center; gap:9px; font-size:13px; }
+    .avatar { width:30px; height:30px; display:grid; place-items:center; color:#34453d; font-size:12px; font-weight:800; border-radius:10px; flex:none; }
+    .online { width:7px; height:7px; background:#54d287; border:2px solid var(--paper); border-radius:50%; margin-left:-13px; align-self:flex-end; margin-bottom:1px; }
+    .member span:last-child { color:#7e857e; font-size:11px; margin-left:auto; }
+    .board-head { display:flex; justify-content:space-between; align-items:start; padding-bottom:26px; }
+    h1 { margin:0; letter-spacing:-.06em; font-size:32px; line-height:1.15; }
+    .board-head p { color:var(--muted); font-size:14px; margin:8px 0 0; }
+    .new-post { background:var(--forest); color:white; border-radius:9px; padding:10px 15px; font-weight:700; font-size:14px; box-shadow:0 5px 0 #0c2d21; transition:.18s; }
+    .new-post:hover { transform:translateY(-2px); box-shadow:0 7px 0 #0c2d21; }
+    .composer { display:none; margin-bottom:20px; background:white; border:1px solid #dce1d8; border-radius:13px; padding:16px; box-shadow:0 10px 30px #274e3510; }
+    .composer.open { display:block; animation:slide .2s ease; }
+    @keyframes slide { from { opacity:0; transform:translateY(-8px); } }
+    .composer input,.composer textarea { width:100%; border:1px solid #dfe3dc; border-radius:8px; outline:none; color:var(--ink); background:#fcfdf9; padding:10px 12px; font-size:14px; }
+    .composer input:focus,.composer textarea:focus { border-color:#91aa64; box-shadow:0 0 0 3px #edf5dc; }
+    .composer textarea { margin-top:9px; min-height:86px; resize:vertical; }
+    .composer-actions { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
+    .hint { color:#9ca29b; font-size:12px; }
+    .publish { background:var(--lime); color:#263426; padding:8px 15px; border-radius:7px; font-size:13px; font-weight:800; }
+    .feed-label { display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); padding-bottom:10px; font-size:13px; font-weight:700; }
+    .feed-label button { background:transparent; color:#657164; font-size:12px; }
+    .post { padding:22px 0; border-bottom:1px solid var(--line); animation:appear .32s ease; }
+    @keyframes appear { from { opacity:0; transform:translateY(10px); } }
+    .post-top { display:flex; gap:10px; align-items:center; }
+    .post-author { font-size:13px; font-weight:800; }
+    .post-time { font:12px "DM Mono"; color:#929890; }
+    .post-tag { margin-left:auto; font-size:11px; padding:3px 8px; border-radius:20px; background:#eaf3d8; color:#51702c; font-weight:700; }
+    .post h2 { font-size:18px; line-height:1.45; margin:11px 0 6px; letter-spacing:-.025em; }
+    .post-content { color:#667069; margin:0; font-size:14px; line-height:1.75; }
+    .post-actions { display:flex; gap:15px; margin-top:14px; }
+    .action { display:flex; align-items:center; gap:6px; background:transparent; color:#89908a; font:12px "DM Mono"; padding:0; transition:.15s; }
+    .action:hover,.action.liked { color:var(--coral); }
+    .action svg { width:16px; height:16px; }
+    .rightbar { align-self:start; }
+    .live-card { background:var(--forest); color:white; padding:19px; border-radius:14px; position:relative; overflow:hidden; }
+    .live-card:after { content:""; position:absolute; width:170px; height:170px; border-radius:50%; background:var(--lime); opacity:.14; right:-80px; top:-80px; }
+    .live-card h2 { font-size:15px; margin:0 0 7px; position:relative; }
+    .live-card p { font-size:12px; line-height:1.65; margin:0; color:#c2d6c6; position:relative; }
+    .sync-state { margin-top:16px; display:flex; align-items:center; gap:8px; position:relative; color:var(--lime); font:500 12px "DM Mono"; }
+    .topic-list { background:white; border:1px solid var(--line); border-radius:12px; margin-top:20px; padding:17px; }
+    .topic-list h3 { margin:0 0 12px; font-size:14px; }
+    .topic { display:flex; gap:9px; padding:10px 0; border-top:1px solid #eff0eb; }
+    .topic:first-of-type { border-top:0; }
+    .topic-index { color:#abb2aa; font:11px "DM Mono"; padding-top:3px; }
+    .topic-main { min-width:0; }
+    .topic-name { font-size:12px; line-height:1.4; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .topic-meta { color:#999f99; font-size:11px; margin-top:4px; }
+    .empty { text-align:center; color:#89918a; padding:45px 10px; font-size:14px; }
+    .toast { position:fixed; left:50%; bottom:25px; transform:translate(-50%,20px); opacity:0; pointer-events:none; background:#1f3128; color:white; padding:10px 14px; border-radius:9px; font-size:13px; box-shadow:0 8px 24px #17342635; transition:.25s; z-index:10; }
+    .toast.show { opacity:1; transform:translate(-50%,0); }
+    @media (max-width:960px) { .page { grid-template-columns:180px minmax(0,1fr); } .rightbar { display:none; } }
+    @media (max-width:680px) { .topbar { height:60px; padding:0 16px; } .nav { display:none; } .status { font-size:10px; } .page { padding:25px 16px 45px; display:block; } .sidebar { display:none; } .board-head { padding-bottom:18px; } h1 { font-size:27px; } .new-post { padding:9px 11px; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark">~</div>漂流站</div>
+    <nav class="nav"><a class="active" href="#">讨论</a><a href="#">发现</a><a href="#">活动</a></nav>
+      <div class="status"><i class="live-dot"></i><span>实时同步已连接</span></div>
+  </header>
+  <main class="page">
+    <aside class="sidebar">
+      <h3>讨论分区</h3>
+      <ul class="channels" id="channels">
+        <li><button class="selected" data-channel="全部"><span>✦ 全部讨论</span><span class="channel-count">24</span></button></li>
+        <li><button data-channel="产品与设计"><span>◒ 产品与设计</span><span class="channel-count">8</span></button></li>
+        <li><button data-channel="技术与工具"><span>⌘ 技术与工具</span><span class="channel-count">12</span></button></li>
+        <li><button data-channel="自由闲聊"><span>☼ 自由闲聊</span><span class="channel-count">4</span></button></li>
+      </ul>
+    </aside>
+    <section>
+      <div class="board-head">
+        <div><h1 id="boardTitle">此刻，聊点什么？</h1><p id="boardDesc">每一条新想法，都能在这里遇见回应。</p></div>
+        <button class="new-post" id="openComposer">＋ 发布讨论</button>
+      </div>
+      <form class="composer" id="composer">
+        <input id="postTitle" maxlength="60" placeholder="写一个清晰的标题" required />
+        <textarea id="postContent" maxlength="500" placeholder="分享你的想法、问题或发现…" required></textarea>
+        <div class="composer-actions"><span class="hint">发布后会实时同步到打开本站的其他标签页</span><button class="publish" type="submit">发布讨论</button></div>
+      </form>
+      <div class="feed-label"><span><span id="feedName">全部讨论</span> · <span id="postCount">0</span> 条动态</span><button id="sortButton">最新发布 ↓</button></div>
+      <div id="feed"></div>
+    </section>
+    <aside class="rightbar">
+      <section class="live-card"><h2>讨论流已就绪</h2><p>发布的内容会即时同步到打开本站的其他标签页。</p><div class="sync-state"><i class="live-dot"></i>已建立本地实时连接</div></section>
+      <section class="topic-list"><h3>热门话题</h3><div id="topics"></div></section>
+    </aside>
+  </main>
+  <div class="toast" id="toast"></div>
+  <script>
+    const channelInfo = { '全部':['此刻，聊点什么？','每一条新想法，都能在这里遇见回应。'], '产品与设计':['产品与设计','从一个细节开始，让想法变得可见。'], '技术与工具':['技术与工具','聊聊代码、效率和那些趁手的工具。'], '自由闲聊':['自由闲聊','留一点空间，给没有目的的交谈。'] };
+    let posts = JSON.parse(localStorage.getItem('drift-forum-posts-v2') || '[]');
+    let selectedChannel = '全部'; let ascending = false;
+    const feed = document.querySelector('#feed'); const toast = document.querySelector('#toast');
+    const icon = (name) => name === 'heart' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.9-8.6a5.5 5.5 0 0 0-.1-7.8Z"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.7 9.7 0 0 1-4.2-1L3 20l1.6-3.8A8 8 0 0 1 3 11.5 8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5Z"/></svg>';
+    function escapeHTML(str) { const el = document.createElement('div'); el.textContent = str; return el.innerHTML; }
+    function relativeTime(time) { const min=Math.max(0,Math.floor((Date.now()-time)/60000)); return min < 1 ? '刚刚' : min < 60 ? min+' 分钟前' : Math.floor(min/60)+' 小时前'; }
+    function render() {
+      let visible = selectedChannel === '全部' ? posts : posts.filter(p=>p.channel===selectedChannel);
+      visible = [...visible].sort((a,b)=>ascending ? a.timestamp-b.timestamp : b.timestamp-a.timestamp);
+      document.querySelector('#postCount').textContent = visible.length;
+      feed.innerHTML = visible.length ? visible.map(p => `<article class="post" data-id="${p.id}">
+        <div class="post-top"><div class="avatar" style="background:${p.color}">${p.initials}</div><span class="post-author">${escapeHTML(p.author)}</span><span class="post-time">${relativeTime(p.timestamp)}</span><span class="post-tag">${p.tag}</span></div>
+        <h2>${escapeHTML(p.title)}</h2><p class="post-content">${escapeHTML(p.content)}</p>
+        <div class="post-actions"><button class="action like-button">${icon('heart')} <span>${p.likes}</span></button><button class="action comment-button">${icon('comment')} <span>${p.comments}</span></button></div>
+      </article>`).join('') : '<div class="empty">这个分区还没有讨论，来发布第一条吧。</div>';
+      const titles = [...posts].sort((a,b)=>b.likes-a.likes).slice(0,3);
+      document.querySelector('#topics').innerHTML = titles.length ? titles.map((p,i)=>`<div class="topic"><div class="topic-index">0${i+1}</div><div class="topic-main"><div class="topic-name">${escapeHTML(p.title)}</div><div class="topic-meta">${p.likes} 喜欢 · ${p.comments} 回复</div></div></div>`).join('') : '<div class="topic-meta">发布讨论后，热门话题会显示在这里。</div>';
+    }
+    function persist(type='sync') { localStorage.setItem('drift-forum-posts-v2', JSON.stringify(posts)); channel?.postMessage({type, posts}); }
+    function showToast(text) { toast.textContent = text; toast.classList.add('show'); clearTimeout(showToast.timer); showToast.timer=setTimeout(()=>toast.classList.remove('show'),2400); }
+    document.querySelector('#openComposer').onclick=()=>{ const c=document.querySelector('#composer'); c.classList.toggle('open'); if(c.classList.contains('open')) document.querySelector('#postTitle').focus(); };
+    document.querySelector('#composer').onsubmit=(event)=>{ event.preventDefault(); const title=postTitle.value.trim(), content=postContent.value.trim(); if(!title||!content) return; const post={ id:'p'+Date.now(),author:'你',initials:'你',color:'#e8ddfb',time:'刚刚',timestamp:Date.now(),channel:selectedChannel==='全部'?'自由闲聊':selectedChannel,tag:'新讨论',title,content,likes:0,comments:0 }; posts.unshift(post); persist('new-post'); render(); event.target.reset(); event.target.classList.remove('open'); showToast('讨论已发布，正在同步给大家'); };
+    document.querySelector('#channels').onclick=(event)=>{ const btn=event.target.closest('button'); if(!btn) return; selectedChannel=btn.dataset.channel; document.querySelectorAll('.channels button').forEach(x=>x.classList.toggle('selected',x===btn)); const [title,desc]=channelInfo[selectedChannel]; boardTitle.textContent=title; boardDesc.textContent=desc; feedName.textContent=selectedChannel==='全部'?'全部讨论':selectedChannel; render(); };
+    feed.onclick=(event)=>{ const button=event.target.closest('.action'); if(!button) return; const article=button.closest('.post'), post=posts.find(p=>p.id===article.dataset.id); if(button.classList.contains('like-button')) { const wasLiked=button.classList.toggle('liked'); post.likes+=wasLiked?1:-1; button.querySelector('span').textContent=post.likes; persist('reaction'); } else { post.comments++; button.querySelector('span').textContent=post.comments; persist('reaction'); showToast('回复功能已准备好，下一步可接入后端评论接口'); } };
+    document.querySelector('#sortButton').onclick=()=>{ ascending=!ascending; document.querySelector('#sortButton').textContent=ascending?'最早发布 ↑':'最新发布 ↓'; render(); };
+    const channel = 'BroadcastChannel' in window ? new BroadcastChannel('drift-forum-live') : null;
+    channel?.addEventListener('message', event=>{ if(event.data.posts){ posts=event.data.posts; render(); if(event.data.type==='new-post') showToast('一条新讨论刚刚抵达'); } });
+    window.addEventListener('storage', event=>{ if(event.key==='drift-forum-posts-v2' && event.newValue){ posts=JSON.parse(event.newValue); render(); } });
+    render();
+  </script>
+</body>
+</html>
